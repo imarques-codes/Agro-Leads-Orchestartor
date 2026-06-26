@@ -1,3 +1,13 @@
+"""
+Módulo responsável pelo cálculo de score de prioridade dos leads agrícolas.
+
+O score considera:
+- estágio atual da cultura;
+- tipo de cultura agrícola;
+- status atual do lead na máquina de estados;
+- variação estatística simulada.
+"""
+
 import numpy as np
 
 
@@ -10,13 +20,9 @@ def calcular_score_inicial(
     """
     Calcula o score inicial de prioridade comercial dos leads.
 
-    A lógica considera:
-    - Estágio agrícola do cliente;
-    - Tipo de cultura;
-    - Status atual dentro da máquina de estados;
-    - Variação estatística simulada.
-
-    Clientes em Plantio ou Safra recebem maior prioridade.
+    Clientes em Plantio e Safra recebem maior prioridade, pois representam
+    momentos comerciais mais relevantes para venda de insumos, peças,
+    implementos e serviços agrícolas.
     """
 
     score_base = gerador.normal(

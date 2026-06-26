@@ -1,10 +1,14 @@
+"""
+Módulo responsável pela conexão, criação do schema e otimização do banco SQLite.
+"""
+
 import sqlite3
 from pathlib import Path
 
 
 def criar_conexao(caminho_banco: Path) -> sqlite3.Connection:
     """
-    Cria conexão SQLite com ajustes básicos de performance.
+    Cria conexão com banco SQLite aplicando ajustes de performance.
     """
 
     conexao = sqlite3.connect(caminho_banco)
@@ -74,7 +78,7 @@ def criar_tabela_leads(conexao: sqlite3.Connection) -> None:
 
 def criar_tabela_eventos_contato(conexao: sqlite3.Connection) -> None:
     """
-    Cria a tabela de eventos de contato.
+    Cria a tabela de histórico de eventos de contato.
     """
 
     consulta_sql = """
@@ -112,7 +116,7 @@ def criar_tabela_eventos_contato(conexao: sqlite3.Connection) -> None:
 
 def criar_schema(conexao: sqlite3.Connection) -> None:
     """
-    Cria todas as tabelas do projeto.
+    Cria todas as tabelas principais do projeto.
     """
 
     criar_tabela_leads(conexao)
@@ -123,7 +127,7 @@ def criar_schema(conexao: sqlite3.Connection) -> None:
 
 def criar_indices(conexao: sqlite3.Connection) -> None:
     """
-    Cria índices para otimizar consultas da engine de orquestração.
+    Cria índices SQL para acelerar consultas críticas da operação.
     """
 
     indices_sql = [
@@ -140,11 +144,6 @@ def criar_indices(conexao: sqlite3.Connection) -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_leads_cultura_estagio
         ON leads (cultura, estagio_atual);
-        """,
-
-        """
-        CREATE INDEX IF NOT EXISTS idx_leads_cooldown_ate
-        ON leads (cooldown_ate);
         """,
 
         """

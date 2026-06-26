@@ -1,3 +1,7 @@
+"""
+Módulo responsável pela geração de dados sintéticos de leads agrícolas.
+"""
+
 import time
 
 import numpy as np
@@ -68,7 +72,7 @@ def gerar_perfil_agricola(
     gerador: np.random.Generator
 ) -> tuple[np.ndarray, np.ndarray]:
     """
-    Gera cultura e estágio agrícola do cliente.
+    Gera cultura agrícola e estágio atual do cliente.
     """
 
     culturas = gerador.choice(
@@ -91,7 +95,7 @@ def gerar_status_leads(
     gerador: np.random.Generator
 ) -> np.ndarray:
     """
-    Gera status inicial dos leads.
+    Gera status inicial dos leads na máquina de estados.
     """
 
     status = gerador.choice(
@@ -229,7 +233,7 @@ def inserir_leads_em_lotes(
     gerador: np.random.Generator
 ) -> None:
     """
-    Insere leads no banco em lotes.
+    Insere leads no banco SQLite em lotes.
     """
 
     inicio = time.time()
