@@ -1,0 +1,15 @@
+﻿.venv/
+__pycache__/
+.ipynb_checkpoints/
+*.pyc
+
+dados/*.db
+dados/*.db-shm
+dados/*.db-wal
+dados/*.sqlite
+
+outputs/*
+!outputs/.gitkeep
+
+.env
+.DS_Store
