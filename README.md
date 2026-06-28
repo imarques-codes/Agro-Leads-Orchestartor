@@ -1,12 +1,12 @@
 # Agro Leads Orchestrator
 
-Projeto de portfólio em Ciência de Dados, Engenharia de Dados e Engenharia de Software aplicado ao contexto de Agritechs.
+Projeto de portfólio em Ciência de dados, Engenharia de dados e Engenharia de software aplicado ao contexto de Agritechs.
 
 O objetivo do projeto é desenvolver um **Orquestrador Omnichannel de Leads Agrícolas**, capaz de controlar contatos comerciais, evitar ligações duplicadas, aplicar regras de cooldown, priorizar clientes em momentos estratégicos de safra e organizar a operação comercial por meio de uma máquina de estados.
 
 ---
 
-## 1. Problema de Negócio
+## 1. Problema de negócio :
 
 Uma empresa de vendas de insumos e implementos agrícolas possui uma base com aproximadamente **950.000 leads** em nível nacional.
 
@@ -23,7 +23,7 @@ A operação comercial apresenta problemas graves:
 
 ---
 
-## 2. Solução Proposta
+## 2. Solução proposta:
 
 A solução proposta é um **Orquestrador Omnichannel de Leads**, baseado em uma lógica de **State Machine**, ou Máquina de Estados.
 
@@ -39,11 +39,11 @@ A partir desses estados, o sistema decide se o cliente pode ser contatado, se de
 
 ---
 
-## 3. Principais Regras de Negócio
+## 3. Principais regras de negócio
 
-### 3.1 Regra de Cooldown
+### 3.1 Regra de cooldown:
 
-Quando uma ligação humana ou automática resulta em **Não Atendido**, o lead entra em status **Em Cooldown** por 48 horas.
+Quando uma ligação humana ou automática resulta em **Não atendido**, o lead entra em status **Em cooldown** por 48 horas.
 
 Durante esse período:
 
@@ -53,29 +53,29 @@ Durante esse período:
 
 ---
 
-### 3.2 Regra de WhatsApp
+### 3.2 Regra de WhatsApp:
 
 A empresa utiliza um bot de WhatsApp para mensagens automáticas.
 
 Quando o cliente responde à mensagem:
 
-* o lead muda imediatamente para **Fila Prioritária**;
+* o lead muda imediatamente para **Fila prioritária**;
 * o cliente passa a ter prioridade de atendimento humano;
 * o sistema entende que houve engajamento ativo.
 
 ---
 
-### 3.3 Regra de Transferência Assistida
+### 3.3 Regra de transferência assistida
 
 Quando o robô liga para um cliente disponível e o cliente atende:
 
 * o sistema simula a transferência automática para um vendedor humano;
-* o lead passa para o status **Em Atendimento**;
+* o lead passa para o status **Em atendimento**;
 * a operação reduz perda de oportunidade comercial.
 
 ---
 
-### 3.4 Regra de Safra e Plantio
+### 3.4 Regra de safra e plantio
 
 Cada lead possui informações agrícolas importantes:
 
@@ -100,7 +100,7 @@ Clientes em período de **Plantio** ou **Safra** recebem maior prioridade, pois 
 
 ---
 
-## 4. Tecnologias Utilizadas
+## 4. Tecnologias utilizadas:
 
 * Python;
 * Pandas;
@@ -114,7 +114,7 @@ Clientes em período de **Plantio** ou **Safra** recebem maior prioridade, pois 
 
 ---
 
-## 5. Estrutura do Projeto
+## 5. Estrutura do projeto
 
 ```text
 agro-leads-orchestrator/
@@ -139,9 +139,9 @@ agro-leads-orchestrator/
 
 ---
 
-## 6. Etapas do Projeto
+## 6. Etapas do projeto
 
-### Parte 1 — Banco de Dados e Massa Sintética
+### Parte 1 — Banco de dados e massa sintética
 
 Nesta etapa, o projeto cria um banco SQLite local chamado `agro_leads.db`.
 
@@ -161,7 +161,7 @@ Também são criados índices SQL para garantir consultas rápidas em grande vol
 
 ---
 
-### Parte 2 — Motor de Orquestração
+### Parte 2 — Motor de orquestração
 
 A próxima etapa será a construção de uma engine em Python responsável por:
 
@@ -174,7 +174,7 @@ A próxima etapa será a construção de uma engine em Python responsável por:
 
 ---
 
-### Parte 3 — Simulador e Relatórios Analíticos
+### Parte 3 — Simulador e relatórios analíticos
 
 A etapa final irá simular um dia real de operação comercial com milhares de interações.
 
@@ -188,7 +188,7 @@ O objetivo será demonstrar:
 
 ---
 
-## 7. Como Executar o Projeto
+## 7. Como executar o projeto
 
 Clone o repositório:
 
@@ -234,7 +234,7 @@ notebooks/01_configuracao_banco_massa_sintetica.ipynb
 
 ---
 
-## 8. Principais Conceitos Aplicados
+## 8. Principais conceitos aplicados
 
 Este projeto demonstra conhecimentos em:
 
@@ -255,7 +255,7 @@ Este projeto demonstra conhecimentos em:
 
 ---
 
-## 9. Objetivo de Portfólio
+## 9. Objetivo de portfólio
 
 Este projeto foi desenvolvido para demonstrar uma solução ponta a ponta envolvendo dados, negócio e tecnologia.
 
@@ -263,7 +263,7 @@ Ele combina contexto realista do agronegócio com práticas de engenharia de sof
 
 ---
 
-## 10. Status do Projeto
+## 10. Status do projeto
 
 Em desenvolvimento.
 
