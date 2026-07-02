@@ -8,6 +8,11 @@ Responsável por:
 - simular transferência assistida;
 - registrar vendas;
 - consultar próximos leads para robôs e vendedores.
+
+Versão otimizada:
+- não recalcula score da base inteira a cada interação;
+- recalcula apenas o lead afetado pela mudança de estado;
+- reduz o tempo de execução do simulador operacional.
 """
 
 import sqlite3
@@ -36,6 +41,7 @@ class OrquestradorOmnichannelLeads:
         self.conexao.execute("PRAGMA foreign_keys = ON;")
         self.conexao.execute("PRAGMA journal_mode = WAL;")
         self.conexao.execute("PRAGMA synchronous = NORMAL;")
+        self.conexao.execute("PRAGMA temp_store = MEMORY;")
 
     @staticmethod
     def _agora() -> str:
@@ -55,92 +61,18 @@ class OrquestradorOmnichannelLeads:
 
         return data.strftime("%Y-%m-%d %H:%M:%S")
 
-    def fechar_conexao(self) -> None:
+    @staticmethod
+    def _expressao_score_sql() -> str:
         """
-        Fecha conexão com o banco.
-        """
+        Retorna a expressão SQL usada para cálculo do score.
 
-        self.conexao.close()
-
-    def registrar_evento(
-        self,
-        id_cliente: int,
-        canal: str,
-        resultado: str,
-        observacao: str | None = None
-    ) -> None:
-        """
-        Registra evento na tabela eventos_contato.
+        A expressão é centralizada para evitar duplicidade entre:
+        - recálculo da base inteira;
+        - recálculo individual de um lead.
         """
 
-        consulta_sql = """
-        INSERT INTO eventos_contato (
-            id_cliente,
-            data_evento,
-            canal,
-            resultado,
-            observacao
-        )
-        VALUES (?, ?, ?, ?, ?);
-        """
-
-        self.conexao.execute(
-            consulta_sql,
-            (
-                id_cliente,
-                self._agora(),
-                canal,
-                resultado,
-                observacao
-            )
-        )
-
-        self.conexao.commit()
-
-    def obter_lead_por_id(self, id_cliente: int) -> dict | None:
-        """
-        Busca um lead pelo id_cliente.
-        """
-
-        consulta_sql = """
-        SELECT
-            id_cliente,
-            nome,
-            telefone,
-            cultura,
-            estagio_atual,
-            status_atual,
-            ultimo_contato,
-            cooldown_ate,
-            score_prioridade
-        FROM leads
-        WHERE id_cliente = ?;
-        """
-
-        cursor = self.conexao.execute(consulta_sql, (id_cliente,))
-        resultado = cursor.fetchone()
-
-        if resultado is None:
-            return None
-
-        return dict(resultado)
-
-    def calcular_score_prioridade(self) -> None:
-        """
-        Recalcula o score de prioridade de forma dinâmica.
-
-        A regra considera:
-        - estágio agrícola;
-        - cultura;
-        - status operacional;
-        - base determinística simulada pelo id_cliente.
-
-        Essa abordagem evita aleatoriedade a cada execução e mantém o score reproduzível.
-        """
-
-        consulta_sql = """
-        UPDATE leads
-        SET score_prioridade = ROUND(
+        return """
+        ROUND(
             MIN(
                 250,
                 (
@@ -172,17 +104,148 @@ class OrquestradorOmnichannelLeads:
                 END
             ),
             2
-        );
+        )
+        """
+
+    def fechar_conexao(self) -> None:
+        """
+        Fecha conexão com o banco.
+        """
+
+        self.conexao.close()
+
+    def registrar_evento(
+        self,
+        id_cliente: int,
+        canal: str,
+        resultado: str,
+        observacao: str | None = None
+    ) -> None:
+        """
+        Registra evento na tabela eventos_contato.
+
+        Este método público faz commit.
+        """
+
+        self._registrar_evento_sem_commit(
+            id_cliente=id_cliente,
+            canal=canal,
+            resultado=resultado,
+            observacao=observacao
+        )
+
+        self.conexao.commit()
+
+    def _registrar_evento_sem_commit(
+        self,
+        id_cliente: int,
+        canal: str,
+        resultado: str,
+        observacao: str | None = None
+    ) -> None:
+        """
+        Registra evento sem realizar commit imediato.
+
+        Usado internamente para reduzir quantidade de commits no SQLite.
+        """
+
+        consulta_sql = """
+        INSERT INTO eventos_contato (
+            id_cliente,
+            data_evento,
+            canal,
+            resultado,
+            observacao
+        )
+        VALUES (?, ?, ?, ?, ?);
+        """
+
+        self.conexao.execute(
+            consulta_sql,
+            (
+                id_cliente,
+                self._agora(),
+                canal,
+                resultado,
+                observacao
+            )
+        )
+
+    def obter_lead_por_id(self, id_cliente: int) -> dict | None:
+        """
+        Busca um lead pelo id_cliente.
+        """
+
+        consulta_sql = """
+        SELECT
+            id_cliente,
+            nome,
+            telefone,
+            cultura,
+            estagio_atual,
+            status_atual,
+            ultimo_contato,
+            cooldown_ate,
+            score_prioridade
+        FROM leads
+        WHERE id_cliente = ?;
+        """
+
+        cursor = self.conexao.execute(consulta_sql, (id_cliente,))
+        resultado = cursor.fetchone()
+
+        if resultado is None:
+            return None
+
+        return dict(resultado)
+
+    def calcular_score_prioridade(self) -> None:
+        """
+        Recalcula o score de prioridade da base inteira.
+
+        Use este método apenas em momentos controlados, por exemplo:
+        - início do dia;
+        - fim da simulação;
+        - rotina batch.
+
+        Evite chamar este método dentro de loops operacionais.
+        """
+
+        consulta_sql = f"""
+        UPDATE leads
+        SET score_prioridade = {self._expressao_score_sql()};
         """
 
         self.conexao.execute(consulta_sql)
         self.conexao.commit()
+
+    def recalcular_score_cliente(self, id_cliente: int) -> None:
+        """
+        Recalcula o score de prioridade de apenas um cliente.
+        """
+
+        self._recalcular_score_cliente_sem_commit(id_cliente)
+        self.conexao.commit()
+
+    def _recalcular_score_cliente_sem_commit(self, id_cliente: int) -> None:
+        """
+        Recalcula o score de prioridade de apenas um cliente sem commit imediato.
+        """
+
+        consulta_sql = f"""
+        UPDATE leads
+        SET score_prioridade = {self._expressao_score_sql()}
+        WHERE id_cliente = ?;
+        """
+
+        self.conexao.execute(consulta_sql, (id_cliente,))
 
     def liberar_cooldowns_expirados(self) -> int:
         """
         Libera leads cujo cooldown já expirou.
 
         Leads em cooldown vencido voltam para o status Disponível.
+        Apenas os leads liberados têm score recalculado.
         """
 
         agora = self._agora()
@@ -194,40 +257,44 @@ class OrquestradorOmnichannelLeads:
         AND cooldown_ate <= ?;
         """
 
-        leads_expirados = pd.read_sql_query(
-            consulta_select,
-            self.conexao,
-            params=(agora,)
-        )
+        cursor = self.conexao.execute(consulta_select, (agora,))
+        ids_liberados = [linha["id_cliente"] for linha in cursor.fetchall()]
+
+        if not ids_liberados:
+            return 0
 
         consulta_update = """
         UPDATE leads
         SET
             status_atual = 'Disponível',
             cooldown_ate = NULL
-        WHERE status_atual = 'Em Cooldown'
-        AND cooldown_ate <= ?;
+        WHERE id_cliente = ?;
         """
 
-        self.conexao.execute(consulta_update, (agora,))
+        self.conexao.executemany(
+            consulta_update,
+            [(id_cliente,) for id_cliente in ids_liberados]
+        )
+
+        for id_cliente in ids_liberados:
+            self._recalcular_score_cliente_sem_commit(id_cliente)
+
         self.conexao.commit()
 
-        self.calcular_score_prioridade()
-
-        return len(leads_expirados)
+        return len(ids_liberados)
 
     def obter_proximos_leads_robo(self, limite: int = 20) -> pd.DataFrame:
         """
         Retorna os próximos leads que podem ser acionados por robô.
 
         Regra:
-        - apenas leads disponíveis;
-        - cooldown expirado é liberado antes da consulta;
-        - ordenação por maior score de prioridade.
+        - libera cooldowns expirados;
+        - busca apenas leads Disponíveis;
+        - ordena por maior score;
+        - não recalcula a base inteira.
         """
 
         self.liberar_cooldowns_expirados()
-        self.calcular_score_prioridade()
 
         consulta_sql = """
         SELECT
@@ -258,12 +325,12 @@ class OrquestradorOmnichannelLeads:
 
         Regra:
         - prioriza Fila Prioritária;
-        - depois considera leads disponíveis;
-        - ordena por score de prioridade.
+        - depois considera leads Disponíveis;
+        - ordena por score;
+        - não recalcula a base inteira.
         """
 
         self.liberar_cooldowns_expirados()
-        self.calcular_score_prioridade()
 
         consulta_sql = """
         SELECT
@@ -326,23 +393,23 @@ class OrquestradorOmnichannelLeads:
             )
         )
 
-        self.conexao.commit()
+        self._recalcular_score_cliente_sem_commit(id_cliente)
 
-        self.registrar_evento(
+        self._registrar_evento_sem_commit(
             id_cliente=id_cliente,
             canal=canal,
             resultado="Não Atendido",
             observacao="Lead colocado em cooldown por 48 horas."
         )
 
-        self.registrar_evento(
+        self._registrar_evento_sem_commit(
             id_cliente=id_cliente,
             canal="Sistema",
             resultado="Cooldown Aplicado",
             observacao=f"Cooldown válido até {cooldown_ate}."
         )
 
-        self.calcular_score_prioridade()
+        self.conexao.commit()
 
     def registrar_resposta_whatsapp(self, id_cliente: int) -> None:
         """
@@ -370,16 +437,16 @@ class OrquestradorOmnichannelLeads:
             )
         )
 
-        self.conexao.commit()
+        self._recalcular_score_cliente_sem_commit(id_cliente)
 
-        self.registrar_evento(
+        self._registrar_evento_sem_commit(
             id_cliente=id_cliente,
             canal="WhatsApp",
             resultado="Resposta WhatsApp",
             observacao="Cliente respondeu ao bot e entrou na fila prioritária."
         )
 
-        self.calcular_score_prioridade()
+        self.conexao.commit()
 
     def registrar_atendimento_robo_atendido(self, id_cliente: int) -> None:
         """
@@ -407,23 +474,60 @@ class OrquestradorOmnichannelLeads:
             )
         )
 
-        self.conexao.commit()
+        self._recalcular_score_cliente_sem_commit(id_cliente)
 
-        self.registrar_evento(
+        self._registrar_evento_sem_commit(
             id_cliente=id_cliente,
             canal="Robô",
             resultado="Atendido",
             observacao="Cliente atendeu ligação do robô."
         )
 
-        self.registrar_evento(
+        self._registrar_evento_sem_commit(
             id_cliente=id_cliente,
             canal="Sistema",
             resultado="Transferência Assistida",
             observacao="Chamada transferida automaticamente para vendedor humano."
         )
 
-        self.calcular_score_prioridade()
+        self.conexao.commit()
+
+    def registrar_atendimento_humano_sem_venda(self, id_cliente: int) -> None:
+        """
+        Registra atendimento humano sem venda imediata.
+
+        O lead entra em Em Atendimento.
+        """
+
+        agora = self._agora()
+
+        consulta_sql = """
+        UPDATE leads
+        SET
+            status_atual = 'Em Atendimento',
+            ultimo_contato = ?,
+            cooldown_ate = NULL
+        WHERE id_cliente = ?;
+        """
+
+        self.conexao.execute(
+            consulta_sql,
+            (
+                agora,
+                id_cliente
+            )
+        )
+
+        self._recalcular_score_cliente_sem_commit(id_cliente)
+
+        self._registrar_evento_sem_commit(
+            id_cliente=id_cliente,
+            canal="Humano",
+            resultado="Atendido",
+            observacao="Cliente atendido por vendedor humano, sem venda imediata."
+        )
+
+        self.conexao.commit()
 
     def registrar_sucesso_venda(self, id_cliente: int) -> None:
         """
@@ -454,14 +558,14 @@ class OrquestradorOmnichannelLeads:
             )
         )
 
-        self.conexao.commit()
-
-        self.registrar_evento(
+        self._registrar_evento_sem_commit(
             id_cliente=id_cliente,
             canal="Humano",
             resultado="Venda",
             observacao=f"Venda realizada. Lead bloqueado até {bloqueio_ate}."
         )
+
+        self.conexao.commit()
 
     def obter_resumo_status(self) -> pd.DataFrame:
         """
@@ -495,7 +599,7 @@ class OrquestradorOmnichannelLeads:
             observacao
         FROM eventos_contato
         WHERE id_cliente = ?
-        ORDER BY data_evento DESC;
+        ORDER BY id_evento DESC;
         """
 
         return pd.read_sql_query(
