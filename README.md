@@ -1,137 +1,109 @@
 # Agro Leads Orchestrator
 
-Projeto de portfólio em Ciência de dados, Engenharia de dados e Engenharia de software aplicado ao contexto de Agritechs.
+Projeto profissional de dados desenvolvido para simular, analisar e otimizar uma operação comercial omnichannel no setor agrícola.
 
-O objetivo do projeto é desenvolver um **Orquestrador Omnichannel de Leads Agrícolas**, capaz de controlar contatos comerciais, evitar ligações duplicadas, aplicar regras de cooldown, priorizar clientes em momentos estratégicos de safra e organizar a operação comercial por meio de uma máquina de estados.
+O projeto representa uma empresa de insumos, máquinas ou serviços agrícolas que possui uma grande base de leads e utiliza diferentes canais de contato, como vendedores humanos, robôs de ligação e WhatsApp.
 
----
-
-## 1. Problema de negócio :
-
-Uma empresa de vendas de insumos e implementos agrícolas possui uma base com aproximadamente **950.000 leads** em nível nacional.
-
-A operação comercial apresenta problemas graves:
-
-* ausência de controle centralizado da base de clientes;
-* vendedores humanos e robôs acessando a mesma lista sem coordenação;
-* clientes recebendo múltiplas ligações no mesmo dia ou na mesma semana;
-* robôs ligando para clientes que já foram abordados por vendedores;
-* clientes sendo contatados mesmo após compra recente;
-* aumento de reclamações em canais como Google e Reclame Aqui;
-* queda na produtividade da equipe comercial;
-* desgaste da marca e perda de oportunidades reais de venda.
+O problema central é a falta de orquestração entre os canais, o que pode gerar contatos duplicados, baixa produtividade comercial, atrito com clientes e perda de oportunidades.
 
 ---
 
-## 2. Solução proposta:
+## Objetivo do Projeto
 
-A solução proposta é um **Orquestrador Omnichannel de Leads**, baseado em uma lógica de **State Machine**, ou Máquina de Estados.
+O objetivo deste projeto é construir uma solução ponta a ponta usando Python, SQL, análise de dados, regras de negócio, simulação operacional e Machine Learning.
 
-O sistema controla o ciclo de vida de cada lead por meio dos seguintes status:
+A solução propõe um orquestrador de leads capaz de:
 
-* Disponível;
-* Em Cooldown;
-* Fila Prioritária;
-* Em Atendimento;
-* Convertido.
-
-A partir desses estados, o sistema decide se o cliente pode ser contatado, se deve aguardar uma janela de cooldown, se deve ser priorizado por um vendedor humano ou se deve ser retirado temporariamente da operação comercial.
-
----
-
-## 3. Principais regras de negócio
-
-### 3.1 Regra de cooldown:
-
-Quando uma ligação humana ou automática resulta em **Não atendido**, o lead entra em status **Em cooldown** por 48 horas.
-
-Durante esse período:
-
-* robôs ficam proibidos de ligar para esse cliente;
-* o cliente não retorna imediatamente para a fila genérica;
-* o sistema reduz contatos repetitivos e inconvenientes.
+- controlar o status dos clientes;
+- evitar contatos duplicados;
+- aplicar cooldown após não atendimento;
+- priorizar clientes que respondem via WhatsApp;
+- simular transferência assistida entre robô e vendedor;
+- registrar eventos auditáveis;
+- criar score de prioridade comercial;
+- analisar resultados por meio de indicadores;
+- aplicar Machine Learning para prever chance de conversão.
 
 ---
 
-### 3.2 Regra de WhatsApp:
+## Problema de Negócio
 
-A empresa utiliza um bot de WhatsApp para mensagens automáticas.
+Em uma operação comercial agrícola com alto volume de leads, diferentes canais podem tentar contato com o mesmo cliente sem coordenação centralizada.
 
-Quando o cliente responde à mensagem:
+Exemplo do problema:
 
-* o lead muda imediatamente para **Fila prioritária**;
-* o cliente passa a ter prioridade de atendimento humano;
-* o sistema entende que houve engajamento ativo.
+- um robô liga para o cliente;
+- o cliente não atende;
+- pouco tempo depois, um vendedor humano também liga;
+- em paralelo, o WhatsApp envia uma mensagem;
+- o cliente se sente incomodado;
+- a empresa perde eficiência e pode prejudicar o relacionamento comercial.
 
----
-
-### 3.3 Regra de transferência assistida
-
-Quando o robô liga para um cliente disponível e o cliente atende:
-
-* o sistema simula a transferência automática para um vendedor humano;
-* o lead passa para o status **Em atendimento**;
-* a operação reduz perda de oportunidade comercial.
+Esse tipo de problema é comum em operações comerciais com múltiplos canais e grande volume de dados.
 
 ---
 
-### 3.4 Regra de safra e plantio
+## Solução Proposta
 
-Cada lead possui informações agrícolas importantes:
+A solução criada neste projeto é um **Orquestrador Omnichannel de Leads Agrícolas**, baseado em uma máquina de estados.
 
-* cultura;
-* estágio atual no campo;
-* score de prioridade.
+Cada lead pode assumir um dos seguintes status:
 
-Culturas consideradas na simulação:
-
-* Cana;
-* Soja;
-* Milho.
-
-Estágios considerados:
-
-* Plantio;
-* Desenvolvimento;
-* Safra;
-* Entresafra.
-
-Clientes em período de **Plantio** ou **Safra** recebem maior prioridade, pois estão em momentos comerciais mais relevantes para compra de insumos, fertilizantes, peças, manutenção ou implementos agrícolas.
+| Status | Descrição |
+|---|---|
+| Disponível | Lead apto para contato |
+| Em Cooldown | Lead temporariamente bloqueado após não atendimento |
+| Fila Prioritária | Lead que respondeu WhatsApp e deve ser priorizado |
+| Em Atendimento | Lead em atendimento humano ou transferência assistida |
+| Convertido | Lead que realizou compra e sai temporariamente da régua comercial |
 
 ---
 
-## 4. Tecnologias utilizadas:
+## Regras de Negócio
 
-* Python;
-* Pandas;
-* NumPy;
-* SQLite;
-* Jupyter Notebook;
-* Matplotlib;
-* Scikit-learn;
-* VS Code;
-* Git e GitHub.
+As principais regras implementadas foram:
+
+- se o cliente não atende, entra em cooldown por 48 horas;
+- durante o cooldown, robôs e vendedores não devem ligar novamente;
+- se o cliente responde ao WhatsApp, entra em fila prioritária;
+- se o robô consegue contato, ocorre transferência assistida para vendedor humano;
+- se ocorre venda, o lead fica bloqueado por 30 dias;
+- clientes em Plantio ou Safra recebem maior prioridade no score;
+- todos os eventos são registrados em histórico auditável.
 
 ---
 
-## 5. Estrutura do projeto
+## Arquitetura do Projeto
+
+O projeto foi organizado em camadas, separando notebooks de análise dos módulos de código reutilizáveis.
 
 ```text
 agro-leads-orchestrator/
 │
-├── dados/
-│   └── agro_leads.db
-│
 ├── notebooks/
-│   └── 01_configuracao_banco_massa_sintetica.ipynb
+│   ├── 01_configuracao_projeto.ipynb
+│   ├── 02_engenharia_dados.ipynb
+│   ├── 03_analise_exploratoria.ipynb
+│   ├── 04_state_machine.ipynb
+│   ├── 05_simulador_operacao.ipynb
+│   ├── 06_machine_learning.ipynb
+│   └── 07_dashboard_final.ipynb
 │
 ├── src/
-│   └── __init__.py
+│   ├── banco.py
+│   ├── gerador.py
+│   ├── score.py
+│   ├── estatisticas.py
+│   ├── visualizacao.py
+│   ├── orquestrador.py
+│   ├── simulador.py
+│   ├── modelagem.py
+│   └── dashboard.py
 │
+├── dados/
 ├── outputs/
-│
+├── img/
 ├── docs/
-│
 ├── README.md
 ├── requirements.txt
 └── .gitignore
@@ -139,61 +111,179 @@ agro-leads-orchestrator/
 
 ---
 
-## 6. Etapas do projeto
+## Tecnologias Utilizadas
 
-### Parte 1 — Banco de dados e massa sintética
-
-Nesta etapa, o projeto cria um banco SQLite local chamado `agro_leads.db`.
-
-A base sintética possui até **950.000 leads**, contendo informações como:
-
-* id do cliente;
-* nome;
-* telefone;
-* cultura agrícola;
-* estágio atual;
-* status operacional;
-* último contato;
-* data de liberação do cooldown;
-* score de prioridade.
-
-Também são criados índices SQL para garantir consultas rápidas em grande volume de dados.
+- Python
+- Pandas
+- NumPy
+- SQLite
+- SQL
+- Matplotlib
+- Scikit-learn
+- Jupyter Notebook
+- Git e GitHub
+- Machine Learning
+- Engenharia de Dados
+- Análise Exploratória de Dados
+- Simulação Operacional
 
 ---
 
-### Parte 2 — Motor de orquestração
+## Etapas do Projeto
 
-A próxima etapa será a construção de uma engine em Python responsável por:
-
-* calcular score de prioridade;
-* buscar próximos leads para robô;
-* aplicar cooldown de 48 horas;
-* registrar resposta de WhatsApp;
-* registrar venda;
-* alterar status dos leads conforme a máquina de estados.
-
----
-
-### Parte 3 — Simulador e relatórios analíticos
-
-A etapa final irá simular um dia real de operação comercial com milhares de interações.
-
-O objetivo será demonstrar:
-
-* redução de ligações duplicadas;
-* aumento da eficiência comercial;
-* priorização de clientes em Safra e Plantio;
-* impacto do WhatsApp na geração de oportunidades;
-* visão analítica da operação.
+| Notebook | Etapa | Descrição |
+|---|---|---|
+| 01 | Configuração do Projeto | Criação do banco SQLite, schema, geração de leads sintéticos e índices |
+| 02 | Engenharia de Dados | Validação, estatísticas, nulos, duplicidades e criação de features |
+| 03 | Análise Exploratória | Análise de cultura, estágio agrícola, status e score |
+| 04 | State Machine | Implementação das regras de negócio e transições de status |
+| 05 | Simulador Operacional | Comparação entre operação sem e com orquestrador |
+| 06 | Machine Learning | Modelo para prever chance de conversão |
+| 07 | Dashboard Final | Consolidação dos indicadores e resumo executivo |
 
 ---
 
-## 7. Como executar o projeto
+## Modelo de Dados
+
+O projeto utiliza duas tabelas principais no SQLite:
+
+### Tabela `leads`
+
+Contém a base principal de clientes e informações comerciais.
+
+Principais campos:
+
+- `id_cliente`
+- `nome`
+- `telefone`
+- `cultura`
+- `estagio_atual`
+- `status_atual`
+- `ultimo_contato`
+- `cooldown_ate`
+- `score_prioridade`
+
+### Tabela `eventos_contato`
+
+Registra o histórico auditável das interações.
+
+Principais campos:
+
+- `id_evento`
+- `id_cliente`
+- `data_evento`
+- `canal`
+- `resultado`
+- `observacao`
+
+---
+
+## Simulação Operacional
+
+Foram comparados dois cenários:
+
+### Cenário 1 — Sem Orquestrador
+
+Neste cenário, os contatos ocorrem sem controle centralizado, permitindo que o mesmo cliente seja acionado mais de uma vez no mesmo período.
+
+### Cenário 2 — Com Orquestrador
+
+Neste cenário, a máquina de estados controla as regras operacionais, impedindo contatos indevidos e priorizando clientes com maior potencial.
+
+---
+
+## Indicadores Gerados
+
+O projeto gera indicadores como:
+
+- percentual de clientes com contatos duplicados;
+- taxa de venda por cenário;
+- taxa de não atendimento;
+- percentual de interações em momento agrícola crítico;
+- quantidade de eventos auditáveis;
+- desempenho dos modelos de Machine Learning;
+- importância das variáveis para previsão de venda.
+
+---
+
+## Resultados Visuais
+
+### Contatos Duplicados por Cenário
+
+![Clientes com contatos duplicados](img/dashboard_duplicidade_clientes.png)
+
+---
+
+### Interações em Momento Agrícola Crítico
+
+![Momento agrícola crítico](img/dashboard_momento_critico.png)
+
+---
+
+### Taxa de Venda por Cenário
+
+![Taxa de venda](img/dashboard_taxa_venda.png)
+
+---
+
+### Importância das Variáveis no Modelo
+
+![Importância das variáveis](img/dashboard_importancia_variaveis.png)
+
+---
+
+## Machine Learning
+
+Na etapa de Machine Learning, foram treinados modelos de classificação para prever se uma interação comercial teria maior chance de resultar em venda.
+
+Modelos utilizados:
+
+- Regressão Logística;
+- Random Forest.
+
+A variável alvo criada foi:
+
+| Variável | Descrição |
+|---|---|
+| `converteu` | 1 para venda, 0 para demais resultados |
+
+Variáveis explicativas utilizadas:
+
+- cenário;
+- canal;
+- cultura;
+- estágio agrícola;
+- status anterior;
+- score de prioridade.
+
+Como a base é sintética e gerada por regras de negócio, os resultados devem ser interpretados como demonstração técnica de pipeline de modelagem, e não como modelo produtivo real.
+
+---
+
+## Principais Aprendizados
+
+Este projeto demonstra competências em:
+
+- construção de banco de dados relacional;
+- criação de dados sintéticos realistas;
+- modelagem de regras de negócio;
+- uso de SQL com Python;
+- engenharia de dados;
+- análise exploratória;
+- simulação operacional;
+- machine learning supervisionado;
+- avaliação de modelos;
+- storytelling com dados;
+- organização profissional de projeto para GitHub.
+
+---
+
+## Como Executar o Projeto
 
 Clone o repositório:
 
 ```bash
-git clone https://github.com/seu-usuario/agro-leads-orchestrator.git
+git clone https://github.com/imarques-codes/agro-leads-orchestrator.git
 ```
 
 Acesse a pasta:
@@ -220,59 +310,36 @@ Instale as dependências:
 pip install -r requirements.txt
 ```
 
-Abra o VS Code:
-
-```bash
-code .
-```
-
-Execute o notebook:
+Execute os notebooks na ordem:
 
 ```text
-notebooks/01_configuracao_banco_massa_sintetica.ipynb
+01_configuracao_projeto.ipynb
+02_engenharia_dados.ipynb
+03_analise_exploratoria.ipynb
+04_state_machine.ipynb
+05_simulador_operacao.ipynb
+06_machine_learning.ipynb
+07_dashboard_final.ipynb
 ```
 
 ---
 
-## 8. Principais conceitos aplicados
+## Observações
 
-Este projeto demonstra conhecimentos em:
+Os arquivos de banco SQLite e saídas intermediárias não são versionados no GitHub por boas práticas de projeto.
 
-* modelagem de dados;
-* banco de dados relacional;
-* SQLite;
-* geração de massa sintética;
-* análise exploratória de dados;
-* engenharia de dados local;
-* regras de negócio;
-* machine state;
-* priorização por score;
-* otimização com índices SQL;
-* simulação operacional;
-* análise de funil comercial;
-* automação de processos;
-* tomada de decisão orientada por dados.
+Arquivos ignorados:
+
+- `.venv/`
+- bancos `.db`;
+- arquivos temporários;
+- outputs gerados localmente.
 
 ---
 
-## 9. Objetivo de portfólio
+## Conclusão
 
-Este projeto foi desenvolvido para demonstrar uma solução ponta a ponta envolvendo dados, negócio e tecnologia.
+O **Agro Leads Orchestrator** demonstra como dados, regras de negócio e Machine Learning podem ser combinados para resolver um problema operacional real em uma operação comercial agrícola.
 
-Ele combina contexto realista do agronegócio com práticas de engenharia de software, ciência de dados e engenharia de dados, criando uma solução aplicável a operações comerciais de Agritechs, revendas agrícolas, empresas de insumos, máquinas, implementos e tecnologia agrícola.
+O projeto vai além de uma análise exploratória simples. Ele apresenta uma solução completa, com geração de dados, banco SQL, camada de orquestração, simulação, modelagem preditiva e dashboard executivo.
 
----
-
-## 10. Status do projeto
-
-Em desenvolvimento.
-
-* [x] Estrutura inicial do projeto;
-* [x] Criação do banco SQLite;
-* [x] Geração de massa sintética;
-* [x] Criação de índices de performance;
-* [ ] Motor de orquestração;
-* [ ] Simulador de operação diária;
-* [ ] Relatórios analíticos;
-* [ ] Visualizações finais;
-* [ ] Documentação técnica completa.
